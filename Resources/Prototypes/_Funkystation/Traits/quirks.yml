@@ -6,21 +6,3 @@
   components:
   - type: HayFever
     ReactionInterval: 45
-
-- type: trait
-  id: ChronicMigraines
-  name: trait-chronic-migraines-name
-  description: trait-chronic-migraines-desc
-  category: Quirks
-  cost: 0
-  components:
-    - type: ChronicMigraines
-
-- type: trait
-  id: IgnoreMinorBodilyAlerts
-  name: trait-ignorebodilyalerts-minor-name
-  description: trait-ignorebodilyalerts-minor-desc
-  category: Quirks
-  cost: 0
-  components:
-  - type: IgnoreMinorBodilyAlerts

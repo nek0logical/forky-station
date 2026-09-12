@@ -1,7 +1,7 @@
 using Robust.Shared.GameStates;
 using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom;
 
-namespace Content.Shared.Traits.Assorted;
+namespace Content.Shared._Funkystation.Traits.Assorted;
 
 /// <summary>
 /// Component for the chronic migraines trait.

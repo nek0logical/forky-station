@@ -1,10 +1,10 @@
 using Content.Shared.Popups;
-using Content.Shared.Traits.Assorted;
+using Content.Shared._Funkystation.Traits.Assorted;
 using Content.Shared.Mindshield.Components;
 using Content.Shared.Mobs.Systems;
 using Robust.Shared.Player;
 using Robust.Shared.Random;
-namespace Content.Server.Traits.Assorted;
+namespace Content.Server._Funkystation.Traits.Assorted;
 
 /// <summary>
 /// This handles chronic migraines, causing the affected to experience random debilitating migraine episodes.
