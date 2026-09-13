@@ -27,6 +27,7 @@ namespace Content.Client._Funkystation.Traits.Assorted
 
         public override bool RequestScreenTexture => true;
         public override OverlaySpace Space => OverlaySpace.WorldSpace;
+        private static readonly ProtoId<ShaderPrototype> CataractsShader = "Cataracts";
 
         private readonly ShaderInstance _cataractsShader;
 
@@ -43,7 +44,7 @@ namespace Content.Client._Funkystation.Traits.Assorted
         public MigraineOverlay()
         {
             IoCManager.InjectDependencies(this);
-            _cataractsShader = _prototypeManager.Index<ShaderPrototype>("Cataracts").InstanceUnique();
+            _cataractsShader = _prototypeManager.Index<ShaderPrototype>(CataractsShader).InstanceUnique();
         }
 
         protected override bool BeforeDraw(in OverlayDrawArgs args)

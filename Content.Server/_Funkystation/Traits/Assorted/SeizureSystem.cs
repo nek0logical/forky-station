@@ -3,20 +3,25 @@
 //
 // SPDX-License-Identifier: MIT
 
-using Content.Server.Speech.EntitySystems;
+using Content.Shared.Speech.EntitySystems;
 using Content.Shared.IdentityManagement;
 using Content.Shared.Jittering;
 using Content.Shared.Mobs.Systems;
 using Content.Shared.Popups;
 using Content.Shared.Standing;
 using Content.Shared.Stunnable;
-using Content.Shared.Traits.Assorted;
+using Content.Shared._Funkystation.Traits.Assorted;
 using Content.Shared.EntityEffects;
 using Content.Shared.Damage;
+using Content.Shared.Damage.Systems;
+using Content.Shared.Damage.Components;
+using Content.Shared.StatusEffectNew;
 using Content.Shared.Effects;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Player;
 using Robust.Server.Audio;
+using Content.Shared.Climbing.Events;
+using System.Linq;
 
 namespace Content.Server._Funkystation.Traits.Assorted;
 
@@ -36,6 +41,7 @@ public sealed partial class SeizureSystem : SharedSeizureSystem
     [Dependency] private StutteringSystem _stuttering = default!;
     [Dependency] private AudioSystem _audio = default!;
     [Dependency] private SharedTransformSystem _transformSystem = default!;
+    [Dependency] private StatusEffectsSystem _statusEffectsSystem = default!;
 
     public override void Initialize()
     {
@@ -48,11 +54,12 @@ public sealed partial class SeizureSystem : SharedSeizureSystem
         if (TerminatingOrDeleted(ent))
             return;
 
-        var dragging = _standing.IsDown(ent);
+        var dragging = _standing.IsDown(ent.Owner);
         if (!dragging)
             return;
 
-        if (TryComp<DamageableComponent>(ent, out var damage) && damage.TotalDamage >= ent.Comp.DamageUpperBound)
+        // Stop dealing damage if max hit
+        if (_damageable.TryGetDamageGreaterThan(ent.Owner!, ent.Comp.DamageUpperBound, out var damagespec))
             return;
 
         var factor = (args.NewPosition.Position - args.OldPosition.Position).Length();
@@ -60,8 +67,8 @@ public sealed partial class SeizureSystem : SharedSeizureSystem
         DamageSpecifier dspec = new();
         dspec.DamageDict.Add("Blunt", 0.6f);
         var normalDamage = dspec * factor;
-        _damageable.TryChangeDamage(ent, normalDamage);
-        _colorFlash.RaiseEffect(Color.Red, new List<EntityUid> {ent}, Filter.Pvs(ent, entityManager: EntityManager));
+        _damageable.TryChangeDamage(ent.Owner, normalDamage);
+        _colorFlash.RaiseEffect(Color.Red, new List<EntityUid> { ent }, Filter.Pvs(ent, entityManager: EntityManager));
     }
     protected override void UpdateSeizureComponents(float frameTime)
     {
@@ -170,7 +177,7 @@ public sealed partial class SeizureSystem : SharedSeizureSystem
         }
 
         // Apply server-side effects
-        _stun.TryParalyze(uid, TimeSpan.FromSeconds(seizure.RemainingTime), true);
+        _stun.TryUpdateParalyzeDuration(uid, TimeSpan.FromSeconds(seizure.RemainingTime));
         _jittering.DoJitter(uid, TimeSpan.FromSeconds(seizure.RemainingTime), true,
             seizure.JitterAmplitude, seizure.JitterFrequency, true);
         _stuttering.DoStutter(uid, TimeSpan.FromSeconds(seizure.RemainingTime), true);
@@ -192,7 +199,7 @@ public sealed partial class SeizureSystem : SharedSeizureSystem
         {
             _popup.PopupEntity(Loc.GetString(selfKey), uid, uid, PopupType.LargeCaution);
             var othersMessage = Loc.GetString(othersKey, ("target", Identity.Entity(uid, EntityManager)));
-            _popup.PopupPredicted(Loc.GetString(selfKey), othersMessage, uid, uid, PopupType.LargeCaution);
+            //_popup.PopupPredicted(Loc.GetString(selfKey), othersMessage, uid, uid, PopupType.LargeCaution);
         }
         catch
         {
@@ -208,7 +215,7 @@ public sealed partial class SeizureSystem : SharedSeizureSystem
         {
             _popup.PopupEntity(Loc.GetString(selfKey), uid, uid, PopupType.LargeCaution);
             var othersMessage = Loc.GetString(othersKey, ("target", Identity.Entity(uid, EntityManager)));
-            _popup.PopupPredicted(Loc.GetString(selfKey), othersMessage, uid, uid, PopupType.LargeCaution);
+            //_popup.PopupPredicted(Loc.GetString(selfKey), othersMessage, uid, uid, PopupType.LargeCaution);
         }
         catch
         {
@@ -224,7 +231,7 @@ public sealed partial class SeizureSystem : SharedSeizureSystem
         {
             _popup.PopupEntity(Loc.GetString(selfKey), uid, uid, PopupType.SmallCaution);
             var othersMessage = Loc.GetString(othersKey, ("target", Identity.Entity(uid, EntityManager)));
-            _popup.PopupPredicted(Loc.GetString(selfKey), othersMessage, uid, uid, PopupType.SmallCaution);
+            //_popup.PopupPredicted(Loc.GetString(selfKey), othersMessage, uid, uid, PopupType.SmallCaution);
         }
         catch
         {
@@ -240,14 +247,14 @@ public sealed partial class SeizureSystem : SharedSeizureSystem
         if (!HasComp<SeizureComponent>(uid))
             return;
 
-        _stuttering.DoRemoveStutter(uid, 0);
+        _statusEffectsSystem.TryRemoveStatusEffect(uid, "Stutter");
         RemComp<SeizureComponent>(uid);
     }
 
     /// <summary>
     /// Triggers a seizure on the target entity.
     /// </summary>
-    public sealed partial class TriggerSeizureEffect : EntityEffect
+    public sealed partial class TriggerSeizureEffect : EntityEffectBase<SeizureComponent>
     {
         /// <summary>
         /// Optional custom seizure duration (seconds).
@@ -273,7 +280,7 @@ public sealed partial class SeizureSystem : SharedSeizureSystem
             comp.SeizureBuild = comp.PostSeizureResidual;
         }
 
-        protected override string? ReagentEffectGuidebookText(IPrototypeManager prototype, IEntitySystemManager entSys)
+        public override string? EntityEffectGuidebookText(IPrototypeManager prototype, IEntitySystemManager entSys)
             => null;
     }
 }

@@ -6,16 +6,16 @@
 using Content.Shared.Movement.Systems;
 using Robust.Shared.Random;
 
-namespace Content.Shared.Traits.Assorted;
+namespace Content.Shared._Funkystation.Traits.Assorted;
 
 /// <summary>
 /// Shared system that handles seizure effects including prodrome warning phase
 /// and seizure with visual effects and movement impairment.
 /// </summary>
-public abstract class SharedSeizureSystem : EntitySystem
+public abstract partial class SharedSeizureSystem : EntitySystem
 {
-    [Dependency] protected readonly MovementSpeedModifierSystem MovementSpeed = default!;
-    [Dependency] protected readonly IRobustRandom Random = default!;
+    [Dependency] protected MovementSpeedModifierSystem MovementSpeed = default!;
+    [Dependency] protected IRobustRandom Random = default!;
 
     // Movement speed constants
     private const float ProdromeMinSpeed = 0.6f;
@@ -331,6 +331,7 @@ public abstract class SharedSeizureSystem : EntitySystem
         if (HasComp<SeizureComponent>(uid))
             return;
 
+        // Apply SeizureComponent to the mob, triggering a seizure
         var comp = EnsureComp<SeizureComponent>(uid);
         comp.CurrentState = SeizureState.Prodrome;
         comp.ProdromeDuration = prodromeDuration;
@@ -340,6 +341,7 @@ public abstract class SharedSeizureSystem : EntitySystem
         comp.MovementSpeedMultiplier = 1.0f;
         comp.TargetMovementSpeed = 1.0f;
 
+        // Give the mob a seizure overlay if requested
         if (overlay)
         {
             var overlayComp = EnsureComp<SeizureOverlayComponent>(uid);
